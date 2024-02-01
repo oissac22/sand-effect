@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        head, body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas width="500" height="700" id="view"></canvas>
+    <script type="text/javascript">
+        const WIDTH = 500;
+        const HEIGHT = 700;
+        const PIXEL_SIZE = 10;
+        const GRID_W = WIDTH / PIXEL_SIZE;
+        const GRID_H = HEIGHT / PIXEL_SIZE;
+        const GRID = new Array(Math.trunc(GRID_H));
+        const MOUSE_POSITION = {x:0, y:0};
+        const BRUSH_SIZE = 5;
+
+        /** @type {HTMLCanvasElement} */
+        const view = document.getElementById('view');
+        const ctx = view.getContext('2d');
+
+        view.addEventListener('mousemove', (e) => {
+            MOUSE_POSITION.x = Math.trunc(e.clientX / PIXEL_SIZE);
+            MOUSE_POSITION.y = Math.trunc(e.clientY / PIXEL_SIZE);
+        })
+
+        function randomByte() {
+            return Math.trunc(Math.random() * 200 + 56).toString(16);
+        }
+
+        function randomColor() {
+            return `#${randomByte()}${randomByte()}${randomByte()}`;
+        }
+
+        for (let y = 0; y < GRID_H; y++) {
+            GRID[y] = new Array(GRID_W);
+            for (let x = 0; x < GRID_W; x++)
+                GRID[y][x] = 0;
+        }
+
+        function pixel(x, y, val = 1) {
+            GRID[y][x] = randomColor();
+        }
+
+        function clear() {
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, WIDTH, HEIGHT)
+        }
+
+        function drawGrids() {
+            ctx.beginPath();
+            ctx.strokeStyle = "#ffffff";
+            for (let y = 1; y < GRID_H; y++) {
+                ctx.moveTo(0, y * PIXEL_SIZE);
+                ctx.lineTo(WIDTH, y * PIXEL_SIZE);
+            }
+            for (let x = 1; x < GRID_W; x++) {
+                ctx.moveTo(x * PIXEL_SIZE, 0);
+                ctx.lineTo(x * PIXEL_SIZE, HEIGHT);
+            }
+            ctx.stroke();
+        }
+
+        function drawPixels() {
+            ctx.beginPath();
+            for (y = 0; y < GRID_H; y++) {
+                for (x = 0; x < GRID_W; x++) {
+                    if (GRID[y][x]) {
+                        ctx.fillStyle = GRID[y][x];
+                        ctx.fillRect( x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE );
+                    }
+                }
+            }
+            ctx.stroke();
+        }
+
+        function movePixes() {
+            for (let y = GRID_H - 2; y >= 0; y--) {
+                for (let x = 0; x < GRID_H; x++) {
+                    if (GRID[y][x]) {
+                        if (GRID[y + 1][x] === 0) {
+                            GRID[y + 1][x] = GRID[y][x];
+                            GRID[y][x] = 0;
+                        } else if (x > 0 && GRID[y + 1][x - 1] === 0) {
+                            GRID[y + 1][x - 1] = GRID[y][x];
+                            GRID[y][x] = 0;
+                        } else if (x < GRID_W - 1 && GRID[y + 1][x + 1] === 0) {
+                            GRID[y + 1][x + 1] = GRID[y][x];
+                            GRID[y][x] = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        function setPixelMousePosition() {
+            const sz = Math.trunc(BRUSH_SIZE / 2);
+            for (let y = MOUSE_POSITION.y - sz; y <= MOUSE_POSITION.y + sz; y++) {
+                if (y < 0 || y >= GRID_H) continue;
+                for (let x = MOUSE_POSITION.x - sz; x <= MOUSE_POSITION.x + sz; x++) {
+                    if (x < 0 || x >= GRID_W) continue;
+                    if (GRID[y][x]) continue;
+                    if (Math.random() > .75)
+                        pixel(x, y);
+                }
+            }
+        }
+
+        function draw() {
+            clear();
+            // drawGrids();
+            setPixelMousePosition();
+            movePixes();
+            drawPixels();
+        }
+
+        setInterval(draw, 1000 / 24);
+    </script>
+</body>
+</html>
